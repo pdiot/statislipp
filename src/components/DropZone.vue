@@ -2,11 +2,11 @@
   <div id="dropzone">
     <div
       class="pretty"
-      v-on:click="testOnClick"
+      v-on:click="onClick"
       v-on:drop="handleDrop($event)"
       v-on:dragover="handleDragover($event)"
     >
-      <input id="uploadInput" type="file" multiple style="display: none" />
+      <input v-on:change="onInputChange($event)" id="uploadInput" type="file" multiple style="display: none" accept=".slp"/>
       <p>Drag files here or click to upload</p>
     </div>
   </div>
@@ -20,8 +20,7 @@ export default {
   name: "DropZone",
   components: {},
   methods: {
-    testOnClick: () => {
-      console.log("On upload click");
+    onClick: () => {
       if (document) {
         if (document.getElementById("uploadInput")) {
           console.log("document exists");
@@ -30,16 +29,22 @@ export default {
         }
       }
     },
-    handleDrop: (event) => {
+    onInputChange: function (event) {
+      event.preventDefault();
+      const fileList = event.target.files;
+      this.makeEnrichedGameFiles(fileList);
+    },
+    handleDrop: function (event) {
       // Prevent default behavior (Prevent file from being opened)
       event.preventDefault();
-      const eventFiles = event.dataTransfer.files;
-      console.log("Received files", receivedFiles);
+      const fileList = event.dataTransfer.files;
+      this.makeEnrichedGameFiles(fileList);
+    },
+    makeEnrichedGameFiles: function (fileList) {
       const startTime = new Date().getTime();
-
       const enrichedGameFiles = [];
       const receivedFiles = [];
-      for (let file of eventFiles) {
+      for (let file of fileList) {
         receivedFiles.push(file);
       }
 
