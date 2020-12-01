@@ -1,7 +1,6 @@
 <template>
   <div id="upload">
     <div>
-      We're in upload.
       <DropZone />
     </div>
   </div>
@@ -17,3 +16,7 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+
+</style>

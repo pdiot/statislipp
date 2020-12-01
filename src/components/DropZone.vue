@@ -6,7 +6,14 @@
       v-on:drop="handleDrop($event)"
       v-on:dragover="handleDragover($event)"
     >
-      <input v-on:change="onInputChange($event)" id="uploadInput" type="file" multiple style="display: none" accept=".slp"/>
+      <input
+        v-on:change="onInputChange($event)"
+        id="uploadInput"
+        type="file"
+        multiple
+        style="display: none"
+        accept=".slp"
+      />
       <p>Drag files here or click to upload</p>
     </div>
   </div>
@@ -23,7 +30,6 @@ export default {
     onClick: () => {
       if (document) {
         if (document.getElementById("uploadInput")) {
-          console.log("document exists");
           //@ts-ignore
           document.getElementById("uploadInput").click();
         }
@@ -52,7 +58,6 @@ export default {
         try {
           const game = await enrichGameFile(file);
           enrichedGameFiles.push(game);
-          console.log("Enriched Game File generated : ", game);
         } catch (error) {
           console.error(error);
         }
@@ -74,8 +79,14 @@ export default {
 
 <style scoped>
 .pretty {
-  background-color: aquamarine;
-  height: 300px;
-  width: 500px;
+  width: 25%;
+  height: 50px;
+  margin: auto;
+  border: #c5c9cc 1px solid;
+  cursor: pointer;
+}
+
+.pretty p {
+  text-align: center;
 }
 </style>
