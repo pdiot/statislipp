@@ -10,6 +10,7 @@
   "dependencies": {
     "@slippi/slippi-js": "^5.0.7",
     "browserify": "^17.0.0",
+    "comlink-loader": "^2.0.0",
     "core-js": "^3.6.5",
     "sass-loader": "^10.1.0",
     "simple-web-worker": "^1.2.0",

@@ -1,6 +1,6 @@
 <template>
   <div id="home">
-    <Overlay v-if="showOverlay" :current="currentProgressForOverlay" />
+    <Overlay v-if="showOverlay" :label="'Please wait while your stats are being processed'"/>
     <div class="side-panel" v-if="hasStats">
       <FilterForm v-bind:list="enrichedGameFiles" v-on:filtered-game="updateList($event)" v-on:update-filter="updateFilter($event)" />
     </div>
@@ -20,10 +20,8 @@ import FilterForm from "./FilterForm";
 import Overlay from "./Overlay";
 import { store } from "../store/slippiStore";
 import { EXTERNALCHARACTERS } from "../libs/constants";
+import { processStats } from "../services/slippi-stats.worker";
 //eslint-disable-next-line
-let sub;
-
-let showOverlayVar = false;
 
 export default {
   name: "Home",
@@ -38,6 +36,8 @@ export default {
       enrichedGameFiles: [],
       gameFilesForList: [],
       filter: {},
+      showOverlayVar: undefined,
+      store: undefined,
     };
   },
   computed: {
@@ -45,11 +45,12 @@ export default {
       return this.enrichedGameFiles && this.enrichedGameFiles.length > 0;
     },
     showOverlay: function () {
-      return showOverlayVar;
+      return this.showOverlayVar;
     },
   },
   created: function () {
-    sub = store.getStore().subscribe((value) => {
+    this.store = store.getStore();
+    this.store.subscribe((value) => {
       console.log("Got value : ", value);
       if (value.enrichedGameFiles) {
         this.enrichedGameFiles = value.enrichedGameFiles;
@@ -66,18 +67,17 @@ export default {
       let gamesToProcess = [...gamesForcedIn, ...gamesNotForcedOut];
       let playerSlippiId = this.filter.playerId;
       let playerCharacter = EXTERNALCHARACTERS.find((ch) => ch.shortName === this.filter.playerCharacter);
-      let message = {
-        key: "START_PROCESSING",
+      let data = {
         games: gamesToProcess,
         slippiId: playerSlippiId,
         characterId: playerCharacter.id,
       };
-      console.log("Message to send : ", message);
-      const worker = new Worker('services/test-workers.js', {type: 'module'});
-      worker.onmessage = (workerMessage) => {
-        console.log('In main : ', workerMessage);
-      };
-      worker.postMessage(message);
+      console.log("Data to process : ", data);
+      this.showOverlayVar = true;
+      processStats(data).then(value => {
+        console.log('Got stats', value);
+        this.showOverlayVar = false;
+      });
     },
     updateList: function (event) {
       console.log("Callback Home.vue", event);

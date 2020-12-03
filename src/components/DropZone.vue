@@ -1,31 +1,33 @@
 <template>
   <div id="dropzone">
-    <div
-      class="pretty"
-      v-on:click="onClick"
-      v-on:drop="handleDrop($event)"
-      v-on:dragover="handleDragover($event)"
-    >
-      <input
-        v-on:change="onInputChange($event)"
-        id="uploadInput"
-        type="file"
-        multiple
-        style="display: none"
-        accept=".slp"
-      />
+    <Overlay v-if="showOverlay" :label="'Reading your files'" />
+    <div class="pretty" v-on:click="onClick" v-on:drop="handleDrop($event)" v-on:dragover="handleDragover($event)">
+      <input v-on:change="onInputChange($event)" id="uploadInput" type="file" multiple style="display: none" accept=".slp" />
       <p>Drag files here or click to upload</p>
     </div>
   </div>
 </template>
 
 <script>
-import { enrichGameFile } from "../services/slippi-file-handler";
+import { enrichGameFile } from "../services/slippi-file-handler.worker";
 import { store } from "../store/slippiStore";
+import Overlay from "./Overlay";
 
 export default {
   name: "DropZone",
-  components: {},
+  data() {
+    return {
+      showOverlayVar: undefined,
+    };
+  },
+  components: {
+    Overlay,
+  },
+  computed: {
+    showOverlay: function () {
+      return this.showOverlayVar;
+    },
+  },
   methods: {
     onClick: () => {
       if (document) {
@@ -47,6 +49,7 @@ export default {
       this.makeEnrichedGameFiles(fileList);
     },
     makeEnrichedGameFiles: function (fileList) {
+      this.showOverlayVar = true;
       const startTime = new Date().getTime();
       const enrichedGameFiles = [];
       const receivedFiles = [];
@@ -66,6 +69,7 @@ export default {
         const time = new Date().getTime() - startTime;
         console.log(`Finished processing in ${time}ms`);
         console.log("Enriched Game File list : ", enrichedGameFiles);
+        this.showOverlayVar = false;
         store.setGames(enrichedGameFiles);
       });
     },

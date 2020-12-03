@@ -1,15 +1,5 @@
 
-import { readFileAsSlippiGame } from "../../src/services/node-utils";
-
-self.onmessage = (message) => {
-  console.log('in worker', message);
-  testWorker(message).then(
-    result => {
-      console.log('in worker -- metas :', result);
-      self.postMessage({key: 'message metas', result});     
-    }
-  );
-}
+import { readFileAsSlippiGame } from "./node-utils";
 
 export async function testWorker(message) {
   let games = [];
@@ -21,7 +11,7 @@ export async function testWorker(message) {
   console.log('in worker -- games : ', games);
   let metadatas = [];
   for (let game of games) {
-    metadatas.push(game.getMetadata());
+    metadatas.push(game.game.getMetadata());
   }
   return metadatas;
 }
