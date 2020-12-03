@@ -1,7 +1,7 @@
 <template>
   <div id="filterform" :key="mandatoryDataKey">
+    <h2>Select player Slippi Id</h2>
     <div id="playerId" class="formRow">
-      <h2>Select player Slippi Id</h2>
       <div
         class="button"
         v-for="slippiId in slippiIds"
@@ -107,38 +107,35 @@ export default {
   },
   watch: {
     list: {
-      handler: function (val, oldVal) {
-        if (val?.length !== oldVal?.length) {
-          // We don't want to redo this if we're only filtering stuff out
-          this.resetAfterGameListChanged();
-          if (this.list && this.list.length > 0) {
-            let slippiIds = [];
-            let playerCharacterPairs = [];
-            let stages = [];
-            for (let egf of this.list) {
-              for (let pcp of egf.playerCharacterPairs) {
-                if (!slippiIds.includes(pcp.player)) {
-                  slippiIds.push(pcp.player);
-                }
-                if (
-                  !playerCharacterPairs.find((pcpArray) => {
-                    return pcpArray.playerId === pcp.player && pcpArray.characterShortName === pcp.character.shortName;
-                  })
-                ) {
-                  playerCharacterPairs.push({
-                    playerId: pcp.player,
-                    characterShortName: pcp.character.shortName,
-                  });
-                }
+      handler: function () {
+        this.resetAfterGameListChanged();
+        if (this.list && this.list.length > 0) {
+          let slippiIds = [];
+          let playerCharacterPairs = [];
+          let stages = [];
+          for (let egf of this.list) {
+            for (let pcp of egf.playerCharacterPairs) {
+              if (!slippiIds.includes(pcp.player)) {
+                slippiIds.push(pcp.player);
               }
-              if (!stages.find((stage) => stage.name === egf.stage)) {
-                stages.push({ name: egf.stage });
+              if (
+                !playerCharacterPairs.find((pcpArray) => {
+                  return pcpArray.playerId === pcp.player && pcpArray.characterShortName === pcp.character.shortName;
+                })
+              ) {
+                playerCharacterPairs.push({
+                  playerId: pcp.player,
+                  characterShortName: pcp.character.shortName,
+                });
               }
             }
-            this.slippiIds = slippiIds;
-            this.playerCharacterPairs = playerCharacterPairs;
-            this.stages = stages;
+            if (!stages.find((stage) => stage.name === egf.stage)) {
+              stages.push({ name: egf.stage });
+            }
           }
+          this.slippiIds = slippiIds;
+          this.playerCharacterPairs = playerCharacterPairs;
+          this.stages = stages;
         }
       },
       immediate: true,
@@ -269,6 +266,9 @@ export default {
             }
           }
         }
+        console.log('Emitting : ', this.list);
+        this.$emit("filtered-game", this.list);
+        this.$emit("update-filter", this.filter);
       }
     },
     selectSlippiId: function (slippiId) {
@@ -380,6 +380,7 @@ export default {
           this.opponentIds.find((opp) => opp.id === opponentId).filterType = "Whitelist";
         }
       }
+      this.filterGames();
       this.optionalDataKey++;
     },
     toggleOpponentCharacter: function (opponentChar) {
@@ -404,6 +405,7 @@ export default {
             characterShortName: opponentChar,
             type: "Whitelist",
           });
+          this.filterGames();
           this.opponentCharacters.find((opp) => opp.shortName === opponentChar).filterType = "Whitelist";
         }
       }
@@ -434,6 +436,7 @@ export default {
           this.stages.find((s) => s.name === stageName).filterType = "Whitelist";
         }
       }
+      this.filterGames();
       this.optionalDataKey++;
     },
     isSelectedPlayerId: function (slippiId) {
@@ -448,7 +451,7 @@ export default {
     isIgnoredPlayerCharacter: function (char) {
       return this.filter?.playerCharacter && this.filter.playerCharacter !== char;
     },
-    resetAfterGameListChanged: function() {
+    resetAfterGameListChanged: function () {
       this.slippiIds = [];
       this.playerCharacterPairs = [];
       this.playerCharacters = [];

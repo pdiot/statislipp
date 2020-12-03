@@ -1,21 +1,13 @@
 <template>
   <div id="home">
-    <div class="side-panel" v-if="hasStats" >
-      <FilterForm v-bind:list="enrichedGameFiles" v-if="renderFilterForm"/>
+    <Overlay v-if="showOverlay" :current="currentProgressForOverlay" />
+    <div class="side-panel" v-if="hasStats">
+      <FilterForm v-bind:list="enrichedGameFiles" v-on:filtered-game="updateList($event)" v-on:update-filter="updateFilter($event)" />
     </div>
-    <div class="main-panel" v-bind:class="{'single-panel': !hasStats}">
+    <div class="main-panel" v-bind:class="{ 'single-panel': !hasStats }">
       <Upload />
-      <GameList
-        v-if="hasStats"
-        v-bind:list="enrichedGameFiles"
-      />
-      <div
-        class="button"
-        v-on:click="generateStats"
-        v-if="hasStats"
-      >
-        Generate stats
-      </div>
+      <GameList v-if="hasStats" v-bind:list="gameFilesForList" v-on:update-list="updateList($event)" />
+      <div class="button" v-on:click="generateStats" v-if="hasStats">Generate stats</div>
     </div>
   </div>
 </template>
@@ -25,9 +17,14 @@ import Upload from "./Upload";
 //eslint-disable-next-line
 import GameList from "./GameList";
 import FilterForm from "./FilterForm";
+import Overlay from "./Overlay";
 import { store } from "../store/slippiStore";
+import { EXTERNALCHARACTERS } from "../libs/constants";
+import { processStats } from "../services/slippi-stats-worker";
 //eslint-disable-next-line
 let sub;
+
+let showOverlayVar = false;
 
 export default {
   name: "Home",
@@ -35,43 +32,73 @@ export default {
     Upload,
     GameList,
     FilterForm,
+    Overlay,
   },
   data() {
     return {
       enrichedGameFiles: [],
-      renderFilterForm: true,
+      gameFilesForList: [],
+      filter: {},
     };
   },
   computed: {
-    hasStats: function() {
+    hasStats: function () {
       return this.enrichedGameFiles && this.enrichedGameFiles.length > 0;
-    }
+    },
+    showOverlay: function () {
+      return showOverlayVar;
+    },
   },
   created: function () {
     sub = store.getStore().subscribe((value) => {
       console.log("Got value : ", value);
       if (value.enrichedGameFiles) {
         this.enrichedGameFiles = value.enrichedGameFiles;
-        // this.refreshFilter();
-      }
-      if (value.filter) {
-        this.filterGames(value.filter);
+        this.gameFilesForList = value.enrichedGameFiles;
       }
     });
   },
   methods: {
-    filterGames: function (filter) {
-      console.log("Filter : ", filter);
-    },
-    generateStats: function() {
-      console.log("TODO Generate stats");
-    },
-    refreshFilter: function() {
-      this.renderFilterForm = false;
-      this.$nextTick().then(() => {
-        this.renderFilterForm = true;
+    generateStats: function () {
+      console.log("Called generate stats");
+      console.log("games : ", this.gameFilesForList);
+      let gamesForcedIn = this.gameFilesForList.filter((g) => g.forcedIn === true);
+      let gamesNotForcedOut = this.gameFilesForList.filter((g) => !g.forcedIn && !g.forcedOut && !g.filteredOut);
+      let gamesToProcess = [...gamesForcedIn, ...gamesNotForcedOut];
+      let playerSlippiId = this.filter.playerId;
+      let playerCharacter = EXTERNALCHARACTERS.find((ch) => ch.shortName === this.filter.playerCharacter);
+      let message = {
+        key: "START_PROCESSING",
+        games: gamesToProcess,
+        slippiId: playerSlippiId,
+        characterId: playerCharacter.id,
+      };
+      console.log("Message to send : ", message);
+      showOverlayVar = true;
+      processStats(message).then((val) => {
+        console.log("Got value : ", val);
+        showOverlayVar = false;
       });
-    }
+    },
+    updateList: function (event) {
+      console.log("Callback Home.vue", event);
+      this.gameFilesForList = [];
+      for (let data of event) {
+        this.gameFilesForList.push(data);
+      }
+      this.gameFilesForList = this.gameFilesForList.sort((a, b) => {
+        if (a.filteredOut === b.filteredOut) {
+          return 0;
+        } else if (a.filteredOut && !b.filteredOut) {
+          return 1;
+        } else {
+          return -1;
+        }
+      });
+    },
+    updateFilter: function (event) {
+      this.filter = event;
+    },
   },
 };
 </script>
@@ -81,16 +108,16 @@ export default {
   display: flex;
   height: 100%;
 }
-  .side-panel {
-    width: 20%;
-    margin-top: 50px;
-  }
+.side-panel {
+  width: 20%;
+  margin-top: 50px;
+}
 
-  .main-panel {
-    width: 80%;
-  }
+.main-panel {
+  width: 80%;
+}
 
-  .single-panel {
-    width: 100%;
-  }
+.single-panel {
+  width: 100%;
+}
 </style>

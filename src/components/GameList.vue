@@ -1,52 +1,48 @@
 <template>
-  <div id="gamelist">
-    <div class="gameLine" v-for="gameFile of list" :key="gameFile.file" v-bind:class="{filteredOut: gameFile.filteredOut}">
-      <div class="file">{{gameFile.file}}</div>
-      <div class="slippiId">{{gameFile.playerCharacterPairs[0].player}}</div>
-      <div class="character">{{gameFile.playerCharacterPairs[0].character.name}}</div>
-      <div class="character">{{gameFile.playerCharacterPairs[1].player}}</div>
-      <div class="slippiId">{{gameFile.playerCharacterPairs[1].character.name}}</div>
-      <div class="stage">{{gameFile.stage}}</div>
-    </div>
+  <div id="gamelist" :key="displayKey">
+    <GameLine v-for="gameFile of list" :key="gameFile.file" :gameFile="gameFile" :filteredOut="gameFile.filteredOut" v-on:filter-game="updateList($event)" />
   </div>
 </template>
 
 <script>
+import GameLine from "./GameLine";
 export default {
-  name: 'GameList',
+  name: "GameList",
   props: {
-    list: Array
+    list: Array,
   },
   components: {
-  }
-}
+    GameLine,
+  },
+  data: function () {
+    return {
+      displayKey: 0,
+    };
+  },
+  watch: {
+    list: {
+      handler: function () {
+        console.log("called gameList watcher");
+        this.displayKey++;
+      },
+      immediate: true,
+    },
+  },
+  methods: {
+    updateList: function (game) {
+      let index = this.list.findIndex((g) => g.file === game.file);
+      if (index !== -1) {
+        this.list[index] = game;
+      }
+      this.displayKey++;
+      this.$emit("update-list", this.list);
+    },
+  },
+};
 </script>
 
 <style scoped>
-  .gameList {
-    width: 60%;
-  }
-
-  .gameLine {
-    display: flex;
-    flex-direction: row;
-  }
-
-  .file {
-    width: 20%;
-  }
-
-  .slippiId {
-    width: 15%;
-  }
-
-  .character {
-    width: 15%;
-  }
-
-  .stage {
-    width: 20%;
-  }
-
-  
+.gameList {
+  width: 60%;
+}
 </style>

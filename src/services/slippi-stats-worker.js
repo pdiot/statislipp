@@ -1,40 +1,43 @@
-const { parentPort, workerData } = require('worker_threads');
-const { default: SlippiGame } = require('@slippi/slippi-js');
-const constants = require('./constants');
-const node_utils = require('./node_utils');
-const fs = require('fs');
-
-const EXTERNALCHARACTERS = constants.EXTERNALCHARACTERS;
-const STAGES = constants.STAGES;
+import { EXTERNALCHARACTERS, STAGES } from "../libs/constants"
+import {readFileAsSlippiGame, onlyUnique, PHYSICAL_BUTTONS, getAttackAction, getDefensiveAction, getMovementAction, isNewShield} from "./node-utils";
 
 const LEDGEDASHWINDOW = 50;
 
-main();
-
 // Functions
 
-function main() {
-  const gameFiles = workerData.gameFiles;
-  const slippiId = workerData.slippiId;
-  const characterId = workerData.characterId;
+export async function processStats(message) {
 
-  node_utils.initLog('debug_worker.log');
+  if (message.key === 'START_PROCESSING') {
+    const slippiId = message.slippiId;    
+    const startTime = new Date().getTime();
 
-  node_utils.addToLog('debug_worker.log', 'JE SUIS UN WORKER. ENCORE DU TRAVAIL ?');
-
-  let stats;
-  try {
-    stats = processGames(gameFiles, slippiId, characterId);
-    parentPort.postMessage(stats);
-  } catch (err) {
-    node_utils.addToLog('debug_worker.log', JSON.stringify(err.stack, null, 4));
+    let stats;
+    try {
+      stats = await processGames(message.games, slippiId);
+      const time = new Date().getTime() - startTime;
+      console.log('Fin du traitement : ', stats);
+      console.log(`Finished processing in ${time}ms`);
+      return stats;
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
 
-function processGames(gamesFromMain, slippiId, characterId) {
+async function processGames(gamesFromList, slippiId) {
+  /**
+   * gamesFromList : 
+   * file : string
+   * stage: string
+   * playerCharacterPairs : {
+   * player: string
+   * character: the whole char (colors, id, name, shortName)
+   * }
+   */
   let games = [];
-  for (const game of gamesFromMain) {
-    games.push({ game: new SlippiGame(game.file), gameFile: game.file, gameFromMain: game });
+  for (const game of gamesFromList) {
+    let slippiGame = await readFileAsSlippiGame(game.fileObject);
+    games.push({ game: slippiGame, gameFile: game.file, playerCharacterPairs: game.playerCharacterPairs });
   }
   // DEBUG
   let debug;
@@ -82,7 +85,7 @@ function processGames(gamesFromMain, slippiId, characterId) {
       (metadata.players[0] && !metadata.players[0].names.code) ||
       (metadata.players[1] && !metadata.players[1].names.code)) {
       // We're in a local game
-      for (let pcp of gameBlob.gameFromMain.playerCharacterPairs) {
+      for (let pcp of gameBlob.playerCharacterPairs) {
         if (pcp.isCurrentPlayer) {
           playerPort = pcp.port;
         } else {
@@ -191,8 +194,8 @@ function processGames(gamesFromMain, slippiId, characterId) {
     jcGrabsForOpponent[startAt][opponentCharName][stage] = opponentJCGrabs;
 
     processedGamesNb++;
-    node_utils.addToLog('debug_worker.log', `WORKER sent statProgress n° ${processedGamesNb} for gamefile ${gameBlob.gameFile}`);
-    parentPort.postMessage('statsProgress ' + processedGamesNb + ' ' + games.length);
+    console.log(`WORKER sent statProgress n° ${processedGamesNb} for gamefile ${gameBlob.gameFile}`);
+    // postMessage('statsProgress ' + processedGamesNb + ' ' + games.length);
   }
 
   const returnValue = {
@@ -216,7 +219,6 @@ function processGames(gamesFromMain, slippiId, characterId) {
     debug
   }
 
-  node_utils.addToLog('debug_worker.log', 'WORKER end of treatment');
   return returnValue;
 }
 
@@ -230,12 +232,13 @@ function getWavedashes(playerPort, frames) {
   };
   // We will store the 8 previous frames of animation because that's how it's done in slippi stats
   let previousPosts = [];
+  let currentPost;
   for (let frameKey of Object.keys(frames)) {
     currentPost = frames[frameKey].players.find(player => player.pre.playerIndex === playerPort).post;
 
     if (currentPost.actionStateId === 43 && previousPosts[previousPosts.length - 1] !== 43) {
       // We detected a new waveland
-      const uniqueAnimations = previousPosts.map(val => val.actionStateId).filter(node_utils.onlyUnique);
+      const uniqueAnimations = previousPosts.map(val => val.actionStateId).filter(onlyUnique);
       if (uniqueAnimations.includes(24)) { // 24 === Jumpsquat 
         // We had a jump in the previous 8 frames, so it's pretty safe to assume this was a wavedash
         // We will count the number of animations it takes us to find the jumpsquat, beginning at the end of previousPosts
@@ -296,17 +299,19 @@ function getJCGrabs(playerPort, frames) {
   let isInsideProcessedGrabAnimation = false;
   let processingDashGrab = false;
   let framesSinceDashGrab = 0;
+  let currentPost;
+  let currentPre;
   for (let frameKey of Object.keys(frames)) {
     currentPost = frames[frameKey].players.find(player => player.pre.playerIndex === playerPort).post;
     currentPre = frames[frameKey].players.find(player => player.pre.playerIndex === playerPort).pre;
     if (processingDashGrab === true) {
-      framesSinceDashGrab ++;
+      framesSinceDashGrab++;
       if (isButtonPressed('x', currentPre.physicalButtons) || isButtonPressed('y', currentPre.physicalButtons)) {
         // node_utils.addToLog(`WORKER - detected a X or Y press on frame ${framesSinceDashGrab} after dashgrab started`);
         if (framesSinceDashGrab === 1) {
-          jcGrabs.failed.twoFramesLate ++;
+          jcGrabs.failed.twoFramesLate++;
         } else if (framesSinceDashGrab === 2) {
-          jcGrabs.failed.threeFramesLate ++;
+          jcGrabs.failed.threeFramesLate++;
         }
         jcGrabs.total++;
         processingDashGrab = false;
@@ -328,7 +333,7 @@ function getJCGrabs(playerPort, frames) {
       if (currentPost.actionStateId === 212) {
         // We detected a standing grab, so we want to know whether it was a jc grab or not
         // node_utils.addToLog(`WORKER - found a stand grab, previous posts ${JSON.stringify(previousPosts.map(pp => pp.actionStateId), null, 4)}`);
-        const uniqueAnimations = previousPosts.map(val => val.actionStateId).filter(node_utils.onlyUnique);
+        const uniqueAnimations = previousPosts.map(val => val.actionStateId).filter(onlyUnique);
         if (uniqueAnimations.includes(24)) { // 24 === Jumpsquat 
           let frameCount = 0;
           for (let i = previousPosts.length - 1; i >= 0; i--) {
@@ -365,15 +370,14 @@ function getJCGrabs(playerPort, frames) {
       } else if (currentPost.actionStateId === 214) {
         // node_utils.addToLog(`WORKER - found a dash grab, frameKey ${frameKey}`);
         // We detect a dash grab, so we want to check if it was an attempted jc grab or not
-          // node_utils.addToLog(`WORKER - Testing physicalButtons ${currentPre.physicalButtons}`);
-          // node_utils.addToLog(`WORKER - currentPost ${JSON.stringify(currentPre, null, 4)}`);
+        // node_utils.addToLog(`WORKER - Testing physicalButtons ${currentPre.physicalButtons}`);
+        // node_utils.addToLog(`WORKER - currentPost ${JSON.stringify(currentPre, null, 4)}`);
         if (isButtonPressed('x', currentPre.physicalButtons) || isButtonPressed('y', currentPre.physicalButtons)) {
           // node_utils.addToLog(`WORKER - detected a X or Y press on the same frame as dashgrab started`);
           jcGrabs.failed.oneFrameLate++;
           jcGrabs.total++;
           previousPosts = [];
           isInsideProcessedGrabAnimation = true;
-          i = -1;
         } else {
           // node_utils.addToLog(`WORKER - didn't detect a X or Y press on the same frame as dashgrab started`);
           // We will need to keep looking forward for 3 frames to see if we find X or Y inputs during the dashgrab input
@@ -444,7 +448,7 @@ function getResult(playerPort, opponentPort, stocks, end) {
 function isButtonPressed(button, physicalButtons) {
   // node_utils.addToLog(`WORKER - is Button ${button}, physicalButtons ${physicalButtons}`);
   // node_utils.addToLog(`WORKER - bitValue ${node_utils.PHYSICAL_BUTTONS[button]}`);
-  return physicalButtons & node_utils.PHYSICAL_BUTTONS[button];
+  return physicalButtons & PHYSICAL_BUTTONS[button];
 }
 
 function getOpeningRatio(playerConversions, opponentConversions) {
@@ -476,9 +480,9 @@ function getPunishedActions(frames, playerPort, opponentConversions, playerConve
           const players = frames[currentFrame].players;
           const correctPlayerData = players.find(player => player.pre.playerIndex === playerPort);
           const postFrameUpdate = correctPlayerData.post;
-          const attack = node_utils.getAttackAction(postFrameUpdate.actionStateId);
-          const defensiveOption = node_utils.getDefensiveAction(postFrameUpdate.actionStateId);
-          const movementOption = node_utils.getMovementAction(postFrameUpdate.actionStateId);
+          const attack = getAttackAction(postFrameUpdate.actionStateId);
+          const defensiveOption = getDefensiveAction(postFrameUpdate.actionStateId);
+          const movementOption = getMovementAction(postFrameUpdate.actionStateId);
           if (attack) {
             // TODO : check whether the attack hit, whiffed, or got shielded
             let isAttackOngoing = true;
@@ -490,13 +494,13 @@ function getPunishedActions(frames, playerPort, opponentConversions, playerConve
               // To detect a hit : We look for the startup frame of the attack, and look it up in our conversions somewhere. 
               // Either it was part of a conversion, and it was a hit (unsafe on hit, crouch, etc), or it wasn't and it's a whiff
               const currentPlayerPost = frames[i].players.find(player => player.pre.playerIndex === playerPort).post;
-              if (node_utils.getAttackAction(currentPlayerPost.actionStateId) === attack) {
+              if (getAttackAction(currentPlayerPost.actionStateId) === attack) {
                 const previousOpponentPost = frames[i - 1].players.find(player => player.pre.playerIndex !== playerPort).post;
                 const previousOpponentActionStateId = previousOpponentPost.actionStateId;
                 const currentOpponentPost = frames[i].players.find(player => player.pre.playerIndex !== playerPort).post;
                 const currentOpponentActionStateId = currentOpponentPost.actionStateId;
                 // here we will check if we detect a new shieldstun "event"
-                if (node_utils.isNewShield(currentOpponentActionStateId, previousOpponentActionStateId)) {
+                if (isNewShield(currentOpponentActionStateId, previousOpponentActionStateId)) {
                   // We have detected a shieldstun, now we want to know if it was a regular shield or a powershield
                   // Since non projectile attacks don't trigger a specific powershield actionStateId, we need to parse some frames
                   // We need to parse the previous frame
@@ -559,9 +563,9 @@ function getLCancels(frames, playerPort, opponentPort) {
   let oppFailedMoves = [];
   for (let frameKey of Object.keys(frames)) {
     const playerPostFrameUpdate = frames[frameKey].players.find(player => player.pre.playerIndex === playerPort).post;
-    const playerAttack = node_utils.getAttackAction(playerPostFrameUpdate.actionStateId);
+    const playerAttack = getAttackAction(playerPostFrameUpdate.actionStateId);
     const oppPostFrameUpdate = frames[frameKey].players.find(player => player.pre.playerIndex === opponentPort).post;
-    const oppAttack = node_utils.getAttackAction(oppPostFrameUpdate.actionStateId);
+    const oppAttack = getAttackAction(oppPostFrameUpdate.actionStateId);
     if (playerAttack) {
       if (playerPostFrameUpdate.lCancelStatus === 1) {
         playerLCancels.successful++;
@@ -603,7 +607,7 @@ function getLedgeDashes(frames, playerPort) {
   let framesSinceLedgeDrop = 0;
   let extraInvincibilityFrames = 0;
   let reset = function (reason) {
-    // node_utils.addToLog(`WORKER LedgeDashes -- Reset for ${reason}`);
+    console.log(`WORKER LedgeDashes -- Reset for ${reason}`);
     foundCliffCatch = false;
     foundCliffDrop = false;
     foundAirDodge = false;
@@ -648,12 +652,12 @@ function getLedgeDashes(frames, playerPort) {
           if (playerPostFrameUpdate.hurtboxCollisionState === 0) {
             // It's not an invincible ledgedash, we check how many frames ago the character started being vulnerable and save the ledgedash
             let vulnerableFrames = 0;
-            for (let i = 0; i <= previousPosts.length - 1; i ++) {
+            for (let i = 0; i <= previousPosts.length - 1; i++) {
               if (previousPosts[i].hurtboxCollisionState === 0) {
                 // node_utils.addToLog(`Found first vulnerable post for ledgeDash, i = ${i}, previousPosts = ${JSON.stringify(previousPosts, null, 4)}`);
                 vulnerableFrames = previousPosts.length - i; // If we find vulnerability on i === 3 out of 10, it means the character will have been vulnerable for 7 frames total
                 i = 20; // We break the loop
-              } 
+              }
             }
             if (!ledgeDashes) {
               ledgeDashes = {};
