@@ -1,27 +1,59 @@
 import { EXTERNALCHARACTERS, STAGES } from "../libs/constants"
-import {readFileAsSlippiGame, onlyUnique, PHYSICAL_BUTTONS, getAttackAction, getDefensiveAction, getMovementAction, isNewShield} from "./node-utils";
+import { readFileAsSlippiGame, onlyUnique, PHYSICAL_BUTTONS, getAttackAction, getDefensiveAction, getMovementAction, isNewShield } from "./node-utils";
+import SWorker from "simple-web-worker";
 
 const LEDGEDASHWINDOW = 50;
+
+self.onmessage = (message) => {
+  console.log('in worker', message);
+  testWorker(message).then(
+    result => {
+      console.log('in worker -- metas :', result);
+      self.postMessage({key: 'message metas', result});     
+    }
+  );
+}
 
 // Functions
 
 export async function processStats(message) {
 
   if (message.key === 'START_PROCESSING') {
-    const slippiId = message.slippiId;    
+    const slippiId = message.slippiId;
     const startTime = new Date().getTime();
 
     let stats;
     try {
-      stats = await processGames(message.games, slippiId);
-      const time = new Date().getTime() - startTime;
-      console.log('Fin du traitement : ', stats);
-      console.log(`Finished processing in ${time}ms`);
-      return stats;
+      SWorker.run(() => {
+        processGames(message.games, slippiId)
+      })
+        .then(val => {
+          console.log('Got value back from worker', val);
+          stats = val;
+          const time = new Date().getTime() - startTime;
+          console.log('Fin du traitement : ', stats);
+          console.log(`Finished processing in ${time}ms`);
+          return stats;
+        });
     } catch (err) {
       console.log(err);
     }
   }
+}
+
+export async function testWorker(message) {
+  let games = [];
+  for (const game of message.games) {
+    let slippiGame = await readFileAsSlippiGame(game.fileObject);
+    games.push({ game: slippiGame, gameFile: game.file, playerCharacterPairs: game.playerCharacterPairs });
+  }
+
+  console.log('in worker -- games : ', games);
+  let metadatas = [];
+  for (let game of games) {
+    metadatas.push(game.getMetadata());
+  }
+  return metadatas;
 }
 
 async function processGames(gamesFromList, slippiId) {

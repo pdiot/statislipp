@@ -20,7 +20,6 @@ import FilterForm from "./FilterForm";
 import Overlay from "./Overlay";
 import { store } from "../store/slippiStore";
 import { EXTERNALCHARACTERS } from "../libs/constants";
-import { processStats } from "../services/slippi-stats-worker";
 //eslint-disable-next-line
 let sub;
 
@@ -74,11 +73,11 @@ export default {
         characterId: playerCharacter.id,
       };
       console.log("Message to send : ", message);
-      showOverlayVar = true;
-      processStats(message).then((val) => {
-        console.log("Got value : ", val);
-        showOverlayVar = false;
-      });
+      const worker = new Worker('services/test-workers.js', {type: 'module'});
+      worker.onmessage = (workerMessage) => {
+        console.log('In main : ', workerMessage);
+      };
+      worker.postMessage(message);
     },
     updateList: function (event) {
       console.log("Callback Home.vue", event);
