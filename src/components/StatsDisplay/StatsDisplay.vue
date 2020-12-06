@@ -5,7 +5,7 @@
         <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" />
       </div>
       <div class="middle">
-        <StatsMainBlock :stats="processedStats" />
+        <StatsMainBlock :stats="processedStats" :currentCharacter="opponentActiveCharacter" :currentStage="activeStage"/>
       </div>
       <div class="right">
         <PlayerDisplayBlock :playerId="'Change character'" :characters="opponentCharacters()" :canChange="true" />

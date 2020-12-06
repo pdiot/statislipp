@@ -1,14 +1,14 @@
 <template>
   <div class="stats-line">
     <template v-if="separator">
+      <div class="separator"></div>
+    </template>
+    <template v-else>
       <div class="stat-line" v-bind:class="{'highlight': highlight}">
         <div class="value-left">{{ value1 }}{{ unit1 ? unit1 : "" }}</div>
         <div v-bind:class="{'highlight': highlight, 'label': label}">{{ label }}</div>
         <div class="value-right">{{ value2 }}{{ unit2 ? unit2 : "" }}</div>
       </div>
-    </template>
-    <template v-else>
-      <div class="separator"></div>
     </template>
   </div>
 </template>
@@ -21,9 +21,9 @@ export default {
     unit1: String,
     value2: String,
     unit2: String,
-    isSeparator: Boolean,
+    separator: Boolean,
     highlight: Boolean,
-    label: Boolean,
+    label: String,
   },
 };
 </script>

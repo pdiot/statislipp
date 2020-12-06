@@ -11,14 +11,6 @@ module.exports = {configureWebpack: (config) => {
         }
       ]
     },
-    {
-      test: /\.scss$/,
-      use: [
-        'vue-style-loader',
-        'css-loader',
-        'sass-loader'
-      ]
-    },
     ...config.module.rules
   ]
 }
