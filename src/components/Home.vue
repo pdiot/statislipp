@@ -1,14 +1,26 @@
 <template>
   <div id="home">
-    <Overlay v-if="showOverlay" :label="'Please wait while your stats are being processed'"/>
-    <div class="side-panel" v-if="hasStats">
-      <FilterForm v-bind:list="enrichedGameFiles" v-on:filtered-game="updateList($event)" v-on:update-filter="updateFilter($event)" />
-    </div>
-    <div class="main-panel" v-bind:class="{ 'single-panel': !hasStats }">
-      <Upload />
-      <GameList v-if="hasStats" v-bind:list="gameFilesForList" v-on:update-list="updateList($event)" />
-      <div class="button" v-on:click="generateStats" v-if="hasStats">Generate stats</div>
-    </div>
+    <template v-if="!hasStats">
+      <Overlay v-if="showOverlay" :label="'Please wait while your stats are being processed'" />
+      <div class="side-panel" v-if="hasGames">
+        <FilterForm v-bind:list="enrichedGameFiles" v-on:filtered-game="updateList($event)" v-on:update-filter="updateFilter($event)" />
+      </div>
+      <div class="main-panel" v-bind:class="{ 'single-panel': !hasGames }">
+        <Upload />
+        <GameList v-if="hasGames" v-bind:list="gameFilesForList" v-on:update-list="updateList($event)" />
+        <div class="button" v-on:click="generateStats" v-if="hasGames">Generate stats</div>
+      </div>
+    </template>
+    <template v-else>
+      <div class="stats-display-wrapper">
+        <div class="game-list">
+          <GameList v-bind:list="gameFilesForList" />
+        </div>
+        <div class="stats-block">
+          <StatsDisplay :list="gameFilesForStats" :stats="stats" :filter="filter" />
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -21,6 +33,7 @@ import Overlay from "./Overlay";
 import { store } from "../store/slippiStore";
 import { EXTERNALCHARACTERS } from "../libs/constants";
 import { processStats } from "../services/slippi-stats.worker";
+import StatsDisplay from "./StatsDisplay/StatsDisplay";
 //eslint-disable-next-line
 
 export default {
@@ -30,6 +43,7 @@ export default {
     GameList,
     FilterForm,
     Overlay,
+    StatsDisplay,
   },
   data() {
     return {
@@ -37,24 +51,32 @@ export default {
       gameFilesForList: [],
       filter: {},
       showOverlayVar: undefined,
-      store: undefined,
+      storeValue: undefined,
+      stats: undefined,
+      gameFilesForStats: [],
     };
   },
   computed: {
-    hasStats: function () {
+    hasGames: function () {
       return this.enrichedGameFiles && this.enrichedGameFiles.length > 0;
+    },
+    hasStats: function () {
+      return this.stats && Object.keys(this.stats).length > 0;
     },
     showOverlay: function () {
       return this.showOverlayVar;
     },
   },
   created: function () {
-    this.store = store.getStore();
-    this.store.subscribe((value) => {
+    this.storeValue = store.getStore();
+    this.storeValue.subscribe((value) => {
       console.log("Got value : ", value);
       if (value.enrichedGameFiles) {
         this.enrichedGameFiles = value.enrichedGameFiles;
         this.gameFilesForList = value.enrichedGameFiles;
+      }
+      if (value.stats) {
+        this.stats = value.stats;
       }
     });
   },
@@ -65,6 +87,7 @@ export default {
       let gamesForcedIn = this.gameFilesForList.filter((g) => g.forcedIn === true);
       let gamesNotForcedOut = this.gameFilesForList.filter((g) => !g.forcedIn && !g.forcedOut && !g.filteredOut);
       let gamesToProcess = [...gamesForcedIn, ...gamesNotForcedOut];
+      this.gameFilesForStats = gamesToProcess;
       let playerSlippiId = this.filter.playerId;
       let playerCharacter = EXTERNALCHARACTERS.find((ch) => ch.shortName === this.filter.playerCharacter);
       let data = {
@@ -74,8 +97,9 @@ export default {
       };
       console.log("Data to process : ", data);
       this.showOverlayVar = true;
-      processStats(data).then(value => {
-        console.log('Got stats', value);
+      processStats(data).then((value) => {
+        console.log("Got stats", value);
+        store.setStats(value);
         this.showOverlayVar = false;
       });
     },
@@ -117,6 +141,33 @@ export default {
 }
 
 .single-panel {
+  width: 100%;
+}
+
+.stats-display-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 2000px) {
+  .stats-display-wrapper .game-list {
+    width: 87%;
+    height: 8em;
+  }
+}
+@media (max-width: 1999px) {
+  .stats-display-wrapper .game-list {
+    width: 90%;
+    height: 150px;
+  }
+}
+
+.stats-display-wrapper .game-list {
+  height: 300px;
+}
+
+.stats-display-wrapper .stats-block {
   width: 100%;
 }
 </style>
