@@ -5,7 +5,7 @@ import './styles.css'
 Vue.config.productionTip = false
 
 Vue.filter('round', function(value) {
-  if (!value) return undefined;
+  if (!value) return 'N/A';
   value = +parseFloat(value.toString()).toFixed(2);
   return '' + value;
 })
