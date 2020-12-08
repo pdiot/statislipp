@@ -196,3 +196,18 @@ export default {
   },
 };
 </script>
+
+<style scoped lang="scss">
+.content {
+  width: 90%;
+  margin: auto;
+
+  .app-stats-line {
+    margin-top: 0.5rem;
+  }
+
+  .app-stats-line:last-child {
+    margin-bottom: 4rem;
+  }
+}
+</style>

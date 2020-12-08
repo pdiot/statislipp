@@ -12,7 +12,9 @@
       <template v-if="getActiveTab() === 'conversions'">
         <ConversionsTab :playerConversions="stats.playerConversions" :opponentConversions="stats.opponentConversions" :currentCharacter="currentCharacter" :currentStage="currentStage" />
       </template>
-      <template v-if="getActiveTab() === 'punishes'"> Punishes Tab </template>
+      <template v-if="getActiveTab() === 'punishes'">
+        <PunishesTab :punishedActionsForPlayer="stats.punishedActionsForPlayer" :punishedActionsForOpponent="stats.punishedActionsForOpponent" :currentCharacter="currentCharacter" :currentStage="currentStage" />
+      </template>
       <template v-if="getActiveTab() === 'lcancels'"> Lcancels Tab </template>
       <template v-if="getActiveTab() === 'execution'"> Execution Tab </template>
     </div>
@@ -22,11 +24,13 @@
 <script>
 import OverallTab from "./StatsTab/OverallTab";
 import ConversionsTab from "./StatsTab/ConversionsTab";
+import PunishesTab from "./StatsTab/PunishesTab";
 export default {
   name: "StatsMainBlock",
   components: {
     OverallTab,
     ConversionsTab,
+    PunishesTab,
   },
   props: {
     stats: Object,
