@@ -1,6 +1,8 @@
 <template>
-  <div id="gamelist" :key="displayKey">
-    <GameLine v-for="gameFile of list" :key="gameFile.file" :gameFile="gameFile" :filteredOut="gameFile.filteredOut" v-on:filter-game="updateList($event)" />
+  <div id="gamelist" v-bind:class="{ double: doubleDisplay }" :key="displayKey">
+    <div v-for="(gameFile, index) of list" :key="gameFile.file" class="gameLineWrapper" v-bind:class="{ left: isLeft(index) }">
+      <GameLine :gameFile="gameFile" :filteredOut="gameFile.filteredOut" v-on:filter-game="updateList($event)" />
+    </div>
   </div>
 </template>
 
@@ -10,6 +12,7 @@ export default {
   name: "GameList",
   props: {
     list: Array,
+    doubleDisplay: Boolean,
   },
   components: {
     GameLine,
@@ -37,12 +40,27 @@ export default {
       this.displayKey++;
       this.$emit("update-list", this.list);
     },
+    isLeft(index) {
+      return index % 2 === 0;
+    },
   },
 };
 </script>
 
-<style scoped>
-.gameList {
-  width: 60%;
+<style scoped lang="scss">
+
+#gamelist {
+  margin: auto;
+}
+
+.double {
+  display: flex;
+  flex-wrap: wrap;
+  .gameLineWrapper {
+    width: 48%;
+  }
+  .left {
+    border-right: #c5c9cc 1px solid;
+  }
 }
 </style>

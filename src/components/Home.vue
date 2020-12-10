@@ -14,7 +14,7 @@
     <template v-else>
       <div class="stats-display-wrapper">
         <div class="game-list">
-          <GameList v-bind:list="gameFilesForList" />
+          <GameList v-bind:list="gameFilesForList" :doubleDisplay="true" />
         </div>
         <div class="stats-block">
           <StatsDisplay :list="gameFilesForStats" :stats="stats" :filter="filter" />
@@ -126,7 +126,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 #home {
   display: flex;
   height: 100%;
@@ -162,9 +162,12 @@ export default {
     height: 150px;
   }
 }
-
 .stats-display-wrapper .game-list {
-  height: 300px;
+  overflow-x: none;
+  overflow-y: scroll;
+  margin: auto;
+  margin-bottom: 1em;
+  margin-top: 1em;
 }
 
 .stats-display-wrapper .stats-block {

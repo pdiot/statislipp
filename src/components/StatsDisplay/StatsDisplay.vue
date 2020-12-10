@@ -2,13 +2,13 @@
   <div id="stats-display">
     <div class="top-block">
       <div class="left">
-        <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" />
+        <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" :side="'left'" />
       </div>
       <div class="middle">
         <StatsMainBlock :stats="processedStats" :currentCharacter="opponentActiveCharacter" :currentStage="activeStage"/>
       </div>
       <div class="right">
-        <PlayerDisplayBlock :playerId="'Change character'" :characters="opponentCharacters()" :canChange="true" />
+        <PlayerDisplayBlock :playerId="'Change character'" :characters="opponentCharacters()" :canChange="true"  :side="'right'" />
       </div>
     </div>
     <div class="bottom-block">

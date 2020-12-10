@@ -136,7 +136,6 @@ export default {
 }
 
 .stats-tabs {
-  width: 70%;
   display: flex;
   @media (min-width: 2000px) {
     height: 3.7em;
@@ -152,6 +151,7 @@ export default {
     padding-top: 1rem;
     transition-duration: 0.25s;
     transition-timing-function: ease-in-out;
+    text-transform: uppercase;
   }
 
   .label.active {

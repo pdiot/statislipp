@@ -47,7 +47,7 @@ export default {
       } else {
         this.gameFile.forcedIn = true;
       }
-      this.$emit('filter-game', this.gameFile)
+      this.$emit("filter-game", this.gameFile);
     },
   },
 };
@@ -57,6 +57,10 @@ export default {
 .gameLine {
   display: flex;
   flex-direction: row;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
 }
 
 .file {
