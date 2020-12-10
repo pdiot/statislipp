@@ -7,16 +7,50 @@
     </div>
     <div class="tab-contents">
       <template v-if="getActiveTab() === 'overall'">
-        <OverallTab :playerOverall="stats.playerOverall" :opponentOverall="stats.opponentOverall" :gameResults="stats.gameResults" :currentCharacter="currentCharacter" :currentStage="currentStage" />
+        <OverallTab
+          :playerOverall="stats.playerOverall"
+          :opponentOverall="stats.opponentOverall"
+          :gameResults="stats.gameResults"
+          :currentCharacter="currentCharacter"
+          :currentStage="currentStage"
+        />
       </template>
       <template v-if="getActiveTab() === 'conversions'">
-        <ConversionsTab :playerConversions="stats.playerConversions" :opponentConversions="stats.opponentConversions" :currentCharacter="currentCharacter" :currentStage="currentStage" />
+        <ConversionsTab
+          :playerConversions="stats.playerConversions"
+          :opponentConversions="stats.opponentConversions"
+          :currentCharacter="currentCharacter"
+          :currentStage="currentStage"
+        />
       </template>
       <template v-if="getActiveTab() === 'punishes'">
-        <PunishesTab :punishedActionsForPlayer="stats.punishedActionsForPlayer" :punishedActionsForOpponent="stats.punishedActionsForOpponent" :currentCharacter="currentCharacter" :currentStage="currentStage" />
+        <PunishesTab
+          :punishedActionsForPlayer="stats.punishedActionsForPlayer"
+          :punishedActionsForOpponent="stats.punishedActionsForOpponent"
+          :currentCharacter="currentCharacter"
+          :currentStage="currentStage"
+        />
       </template>
-      <template v-if="getActiveTab() === 'lcancels'"> Lcancels Tab </template>
-      <template v-if="getActiveTab() === 'execution'"> Execution Tab </template>
+      <template v-if="getActiveTab() === 'lcancels'">
+        <LcancelTab
+          :lcancelsForPlayer="stats.lcancelsForPlayer"
+          :lcancelsForOpponent="stats.lcancelsForOpponent"
+          :currentCharacter="currentCharacter"
+          :currentStage="currentStage"
+        />
+      </template>
+      <template v-if="getActiveTab() === 'execution'">
+        <ExecutionTab
+          :ledgeDashesForPlayer="stats.ledgeDashesForPlayer"
+          :ledgeDashesForOpponent="stats.ledgeDashesForOpponent"
+          :playerWavedashes="stats.playerWavedashes"
+          :opponentWavedashes="stats.opponentWavedashes"
+          :playerJCGrabs="stats.playerJCGrabs"
+          :opponentJCGrabs="stats.opponentJCGrabs"
+          :currentCharacter="currentCharacter"
+          :currentStage="currentStage"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -25,12 +59,16 @@
 import OverallTab from "./StatsTab/OverallTab";
 import ConversionsTab from "./StatsTab/ConversionsTab";
 import PunishesTab from "./StatsTab/PunishesTab";
+import LcancelTab from "./StatsTab/LcancelTab";
+import ExecutionTab from "./StatsTab/ExecutionTab";
 export default {
   name: "StatsMainBlock",
   components: {
     OverallTab,
     ConversionsTab,
     PunishesTab,
+    LcancelTab,
+    ExecutionTab,
   },
   props: {
     stats: Object,
