@@ -1,6 +1,7 @@
 <template>
   <div class="my-overlay">
-    <div class="lds-dual-ring">{{label}}</div>
+    <div class="overlay-label">{{ label }}</div>
+    <div class="lds-dual-ring"></div>
   </div>
 </template>
 
@@ -8,12 +9,21 @@
 export default {
   name: "Overlay",
   props: {
-    label: String
-  }
+    label: String,
+  },
 };
 </script>
 
 <style scoped>
+.my-overlay {
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-label {
+  margin-bottom: 2em;
+}
+
 .lds-dual-ring {
   display: inline-block;
   width: 80px;

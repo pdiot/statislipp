@@ -103,14 +103,12 @@ export default {
   },
   methods: {
     getActiveTab: function () {
-      console.log("tabs :", this.tabs);
       if (this.tabs && this.tabs.length > 0) {
         let found = this.tabs.find((t) => t.active);
         return found ? found.label : undefined;
       }
     },
     setActiveTab: function (label) {
-      console.log("called Set active tab", label);
       for (let tab of this.tabs) {
         if (tab.label === label) {
           tab.active = true;

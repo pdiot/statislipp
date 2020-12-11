@@ -154,8 +154,6 @@ export default {
           for (let game of this.list) {
             let playerIdFound = game.playerCharacterPairs.find((pcp) => pcp.player === this.filter.playerId);
             if (!playerIdFound) {
-              console.log(`On ne trouve pas ${this.filter.playerId} dans la liste des joueurs`);
-              console.log("Joueurs : ", game.playerCharacterPairs);
               game.filteredOut = true;
             } else {
               game.filteredOut = false;
@@ -266,7 +264,6 @@ export default {
             }
           }
         }
-        console.log('Emitting : ', this.list);
         this.$emit("filtered-game", this.list);
         this.$emit("update-filter", this.filter);
       }
@@ -309,7 +306,6 @@ export default {
       this.getOpponentCharacters();
     },
     getOpponentCharacters: function () {
-      console.log("Called getOpponentCharacters");
       this.opponentCharacters = [];
       if (this.filter.opponentIds?.length > 0) {
         if (this.filter.opponentIds.includes((filterOpponentId) => filterOpponentId.type === "Whitelist")) {
@@ -355,7 +351,6 @@ export default {
       }
     },
     toggleOpponentId: function (opponentId) {
-      console.log("Called toggleOpponentId", opponentId);
       if (!this.filter.opponentIds) {
         this.filter.opponentIds = [
           {

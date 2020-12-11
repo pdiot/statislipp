@@ -86,10 +86,10 @@ export default {
       console.log("Clicked on write stats");
     },
     changeCharacterSend: function () {
-      console.log("Clicked on change character");
+      this.$emit("character-change", true);
     },
     back: function () {
-      console.log("Clicked on back to filter");
+      this.$emit("back", true);
     },
   },
 };
@@ -184,5 +184,4 @@ export default {
   background-repeat: no-repeat;
   background-size: 100%;
 }
-
 </style>

@@ -156,7 +156,6 @@ export async function processConversions(data) {
     conversions[opponentChar]['allStages'].processedKillPunishLastHits = calculMostCommonMove(punishKillLastHitsAllStages);
     conversions[opponentChar]['allStages'].processedDamageForMostCommonNeutralOpeners = averageDamageForMostCommonStarters(3, [...neutralAllStages, ...oneHitOnlyNeutralAllStages], neutralFirstHitsAllStages.map(move => move.moveId));
     conversions[opponentChar]['allStages'].processedDamageForMostCommonPunishStarts = averageDamageForMostCommonStarters(3, [...punishesAllStages, ...oneHitOnlyPunishesAllStages], punishFirstHitsAllStages.map(move => move.moveId));
-    console.debug('Conversions for ' + opponentChar + ' : ', conversions[opponentChar]);
   }
   return conversions;
 }

@@ -1,7 +1,7 @@
 <template>
   <div id="gamelist" v-bind:class="{ double: doubleDisplay }" :key="displayKey">
     <div v-for="(gameFile, index) of list" :key="gameFile.file" class="gameLineWrapper" v-bind:class="{ left: isLeft(index) }">
-      <GameLine :gameFile="gameFile" :filteredOut="gameFile.filteredOut" v-on:filter-game="updateList($event)" />
+      <GameLine :gameFile="gameFile" :filteredOut="gameFile.filteredOut" v-on:filter-game="updateList($event)" :simple="doubleDisplay"/>
     </div>
   </div>
 </template>
@@ -25,7 +25,6 @@ export default {
   watch: {
     list: {
       handler: function () {
-        console.log("called gameList watcher");
         this.displayKey++;
       },
       immediate: true,
@@ -51,6 +50,15 @@ export default {
 
 #gamelist {
   margin: auto;
+  margin-top: 1em;
+  width: 90%;
+  overflow-y: scroll;
+  @media (min-width: 2000px) {
+    max-height: 1000px;
+  }
+  @media (max-width: 1999px) {
+    max-height: 600px;
+  }
 }
 
 .double {
@@ -62,5 +70,6 @@ export default {
   .left {
     border-right: #c5c9cc 1px solid;
   }
+    max-height: 100px !important;
 }
 </style>

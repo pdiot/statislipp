@@ -5,15 +5,29 @@
         <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" :side="'left'" />
       </div>
       <div class="middle">
-        <StatsMainBlock :stats="processedStats" :currentCharacter="opponentActiveCharacter" :currentStage="activeStage"/>
+        <StatsMainBlock :stats="processedStats" :currentCharacter="opponentActiveCharacter" :currentStage="activeStage" />
       </div>
       <div class="right">
-        <PlayerDisplayBlock :playerId="'Change character'" :characters="opponentCharacters()" :canChange="true"  :side="'right'" />
+        <PlayerDisplayBlock
+          :playerId="'Change character'"
+          :characters="opponentCharacters()"
+          :canChange="true"
+          :side="'right'"
+          v-on:character-change="changeCharacter()"
+          v-on:back="back()"
+        />
+      </div>
+      <div class="modale" v-if="characterModale">
+        <div class="characterModale">
+          <div v-for="character of opponentCharacters()" class="characterPicture" :key="character.shortName" v-on:click="saveCharacter(character)">
+            <img :src="getOpponentCharacterImageUrl(character)" />
+          </div>
+        </div>
       </div>
     </div>
     <div class="bottom-block">
       <div class="bottom">
-        <StageDisplayBlock :stages="stages()" />
+        <StageDisplayBlock :stages="stages()" v-on:stage-change="setStage($event)" />
       </div>
     </div>
   </div>
@@ -23,7 +37,17 @@
 import PlayerDisplayBlock from "./PlayerDisplayBlock";
 import StageDisplayBlock from "./StageDisplayBlock";
 import StatsMainBlock from "./StatsMainBlock";
-import { processWinrates, processWavedashes, processConversions, processOverallList, processPunishedActions, processLCancels, processLedgeDashes, processJCGrabs } from "../../services/stats-processing";
+import { getCharacterVersus } from "../../services/icons.service";
+import {
+  processWinrates,
+  processWavedashes,
+  processConversions,
+  processOverallList,
+  processPunishedActions,
+  processLCancels,
+  processLedgeDashes,
+  processJCGrabs,
+} from "../../services/stats-processing";
 
 export default {
   name: "StatsDisplay",
@@ -41,6 +65,7 @@ export default {
     return {
       opponentActiveCharacter: undefined,
       activeStage: undefined,
+      characterModale: false,
       playerConversions: undefined,
       opponentConversions: undefined,
       playerOverall: undefined,
@@ -83,16 +108,15 @@ export default {
     list: {
       handler: function () {
         if (this.playerOverall) {
-          console.log("Triggered list watcher");
           // We already have calculated stuff once, so this should only trigger if we're updating the games
           this.getProcessedStats();
         }
       },
       immediate: true,
+      deep: true,
     },
     stats: {
       handler: function () {
-        console.log("Triggered stats watcher");
         this.getProcessedStats();
       },
       immediate: true,
@@ -102,8 +126,24 @@ export default {
     playerId: function () {
       return this.filter.playerId;
     },
+    setStage: function (stage) {
+      this.activeStage = stage.stage;
+    },
     playerCharacter: function () {
       return { shortName: this.filter.playerCharacter, active: true };
+    },
+    changeCharacter: function () {
+      this.characterModale = true;
+    },
+    saveCharacter: function (character) {
+      if (this.opponentActiveCharacter !== character.shortName) {
+        this.opponentActiveCharacter = character.shortName;
+      }
+      this.characterModale = false;
+    },
+    getOpponentCharacterImageUrl: function (character) {
+      const path = getCharacterVersus(character.shortName, "right");
+      return require(`@/${path}`);
     },
     opponentCharacters: function () {
       let chars = [];
@@ -122,25 +162,37 @@ export default {
     },
     stages: function () {
       let stages = [];
-      for (let game of this.list) {
-        let found = stages.find((s) => s.stage === game.stage);
-        if (!found) {
-          stages.push({
-            stage: game.stage,
-            active: game.stage === this.activeStage ? true : false,
-          });
+      if (this.opponentActiveCharacter) {
+        for (let game of this.list) {
+          if (game.playerCharacterPairs.find((pcp) => pcp.player !== this.playerId() && pcp.character.shortName === this.opponentActiveCharacter)) {
+            let found = stages.find((s) => s.stage === game.stage);
+            if (!found) {
+              stages.push({
+                stage: game.stage,
+                active: game.stage === this.activeStage ? true : false,
+              });
+            }
+          }
         }
+        stages.push({
+          stage: "allStages",
+          active: "allStages" === this.activeStage ? true : false,
+        });
       }
       return stages;
+    },
+    back: function () {
+      this.$emit("back", true);
     },
     niceName: function (gameFile) {
       return gameFile.substring(gameFile.length - 19, gameFile.length - 4);
     },
     filterStats: function () {
-      console.log("Stats Display - Filter Stats");
       const niceNamesToKeep = [];
       for (let game of this.list) {
-        niceNamesToKeep.push(this.niceName(game.file));
+        if (!game.forcedOut) {
+          niceNamesToKeep.push(this.niceName(game.file));
+        }
       }
       const newStats = {
         playerCharName: this.stats.playerCharName,
@@ -427,5 +479,31 @@ export default {
 
 .bottom-block {
   margin-top: 1rem;
+}
+
+.modale {
+  position: absolute;
+  max-width: 730px;
+  bottom: 10%;
+  right: 30px;
+  background-color: rgba(7, 24, 24, 0.808);
+  box-shadow: 0 0 6px black;
+
+  .characterModale {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap-reverse;
+    .characterPicture {
+      padding: 1rem;
+      img {
+        width: 200px;
+        height: 200px;
+      }
+      cursor: pointer;
+    }
+    .characterPicture:hover {
+      background-color: rgb(40, 97, 99);
+    }
+  }
 }
 </style>

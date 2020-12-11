@@ -604,7 +604,6 @@ function getLedgeDashes(frames, playerPort) {
   let framesSinceLedgeDrop = 0;
   let extraInvincibilityFrames = 0;
   let reset = function (reason) {
-    console.log(`WORKER LedgeDashes -- Reset for ${reason}`);
     foundCliffCatch = false;
     foundCliffDrop = false;
     foundAirDodge = false;

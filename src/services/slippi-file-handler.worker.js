@@ -79,10 +79,8 @@ export async function enrichGameFile(file) {
         stage: stage
       };
     }
-    console.log('File enriching done');
     return enrichedGameFile;
   }
-  console.log('File skipped');
   return undefined;
 
 }

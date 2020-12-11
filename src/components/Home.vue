@@ -1,23 +1,33 @@
 <template>
   <div id="home">
     <template v-if="!hasStats">
-      <Overlay v-if="showOverlay" :label="'Please wait while your stats are being processed'" />
+      <Overlay v-if="showOverlay" :label="'Please wait while your stats are being processed (roughly 500ms per file)'" />
       <div class="side-panel" v-if="hasGames">
         <FilterForm v-bind:list="enrichedGameFiles" v-on:filtered-game="updateList($event)" v-on:update-filter="updateFilter($event)" />
       </div>
       <div class="main-panel" v-bind:class="{ 'single-panel': !hasGames }">
+        <div class="header-data-line">
+          <div class="d40"></div>
+          <h1>Slippi stats calculator V1.0</h1>
+          <div class="d20"></div>
+          <div class="slippi-link">
+            <a v-on:click="openSlippiGG()">
+              <img alt="Powered by Slippi" title="Open Slippi.gg homepage" src="../assets/powered-by.png" />
+            </a>
+          </div>
+        </div>
         <Upload />
         <GameList v-if="hasGames" v-bind:list="gameFilesForList" v-on:update-list="updateList($event)" />
-        <div class="button" v-on:click="generateStats" v-if="hasGames">Generate stats</div>
+        <div class="button generateStats" v-on:click="generateStats" v-if="displayButton()">Generate stats</div>
       </div>
     </template>
     <template v-else>
       <div class="stats-display-wrapper">
         <div class="game-list">
-          <GameList v-bind:list="gameFilesForList" :doubleDisplay="true" />
+          <GameList v-bind:list="gameFilesForStats" :doubleDisplay="true" v-on:update-list="updateListStats($event)"/>
         </div>
         <div class="stats-block">
-          <StatsDisplay :list="gameFilesForStats" :stats="stats" :filter="filter" />
+          <StatsDisplay :list="gameFilesForStats" :stats="stats" :filter="filter" v-on:back="resetStats()" />
         </div>
       </div>
     </template>
@@ -65,12 +75,11 @@ export default {
     },
     showOverlay: function () {
       return this.showOverlayVar;
-    },
+    }
   },
   created: function () {
     this.storeValue = store.getStore();
     this.storeValue.subscribe((value) => {
-      console.log("Got value : ", value);
       if (value.enrichedGameFiles) {
         this.enrichedGameFiles = value.enrichedGameFiles;
         this.gameFilesForList = value.enrichedGameFiles;
@@ -82,8 +91,6 @@ export default {
   },
   methods: {
     generateStats: function () {
-      console.log("Called generate stats");
-      console.log("games : ", this.gameFilesForList);
       let gamesForcedIn = this.gameFilesForList.filter((g) => g.forcedIn === true);
       let gamesNotForcedOut = this.gameFilesForList.filter((g) => !g.forcedIn && !g.forcedOut && !g.filteredOut);
       let gamesToProcess = [...gamesForcedIn, ...gamesNotForcedOut];
@@ -95,16 +102,13 @@ export default {
         slippiId: playerSlippiId,
         characterId: playerCharacter.id,
       };
-      console.log("Data to process : ", data);
       this.showOverlayVar = true;
       processStats(data).then((value) => {
-        console.log("Got stats", value);
         store.setStats(value);
         this.showOverlayVar = false;
       });
     },
     updateList: function (event) {
-      console.log("Callback Home.vue", event);
       this.gameFilesForList = [];
       for (let data of event) {
         this.gameFilesForList.push(data);
@@ -122,6 +126,26 @@ export default {
     updateFilter: function (event) {
       this.filter = event;
     },
+    updateListStats: function(event) {
+      this.gameFilesForStats = [];
+      for (let game of event) {
+        this.gameFilesForStats.push(game);
+      }
+    },
+    openSlippiGG: function () {
+      window.open("https://slippi.gg", "_blank");
+    },
+    resetStats: function() {
+      this.stats = undefined;
+      this.filter = {};
+      this.gameFilesForList= [];
+      for (let game of this.enrichedGameFiles) {
+        this.gameFilesForList.push(game);
+      }
+    },
+    displayButton: function() {
+      return this.enrichedGameFiles?.length > 0 && this.filter?.playerId && this.filter?.playerCharacter;
+    }
   },
 };
 </script>
@@ -164,7 +188,6 @@ export default {
 }
 .stats-display-wrapper .game-list {
   overflow-x: none;
-  overflow-y: scroll;
   margin: auto;
   margin-bottom: 1em;
   margin-top: 1em;
@@ -172,5 +195,48 @@ export default {
 
 .stats-display-wrapper .stats-block {
   width: 100%;
+}
+
+.header-data-line {
+  display: flex;
+}
+
+.d40 {
+  width: 40%;
+}
+
+h1 {
+  width: 20%;
+}
+
+.d20 {
+  width: 20%;
+}
+
+.slippi-link {
+  width: 20%;
+  padding-top: 2em;
+  a {
+    cursor: pointer;
+    img {
+      height: 100px;
+    }
+  }
+}
+
+.offset {
+  
+  @media (min-width : 2000px) {
+    margin-left: -32em;
+  }
+  @media (max-width : 1999px) {
+    margin-left: -384px;
+  }
+}
+
+.generateStats {
+  margin: auto;
+  margin-top: 1em;
+  font-size: 2em;
 }
 </style>
