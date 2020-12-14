@@ -15,5 +15,5 @@ module.exports = {
       ...config.module.rules
     ]
   },
-  publicPath: ''
+  publicPath: '/statislipp/'
 }
