@@ -15,6 +15,5 @@ module.exports = {
       ...config.module.rules
     ]
   },
-  publicPath: process.env.NODE_ENV === 'production'    ? '/statislipp/'    : '/'
-
+  publicPath: '/statislipp/'
 }
