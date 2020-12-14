@@ -306,9 +306,10 @@ export default {
       this.getOpponentCharacters();
     },
     getOpponentCharacters: function () {
+      console.log("Called get opponent characters");
       this.opponentCharacters = [];
       if (this.filter.opponentIds?.length > 0) {
-        if (this.filter.opponentIds.includes((filterOpponentId) => filterOpponentId.type === "Whitelist")) {
+        if (this.filter.opponentIds.find((filterOpponentId) => filterOpponentId.type === "Whitelist")) {
           for (let opponentId of this.filter.opponentIds.filter((opp) => opp.type === "Whitelist")) {
             for (let game of this.list) {
               if (!game.filteredOut) {
@@ -323,7 +324,7 @@ export default {
               }
             }
           }
-        } else if (this.filter.opponentIds.includes((filterOpponentId) => filterOpponentId.type === "Blacklist")) {
+        } else if (this.filter.opponentIds.find((filterOpponentId) => filterOpponentId.type === "Blacklist")) {
           for (let game of this.list) {
             if (!game.filteredOut) {
               let pcp = game.playerCharacterPairs.find((pc) => pc.player !== this.filter.playerId);
@@ -376,6 +377,7 @@ export default {
         }
       }
       this.filterGames();
+      this.getOpponentCharacters();
       this.optionalDataKey++;
     },
     toggleOpponentCharacter: function (opponentChar) {
@@ -400,10 +402,10 @@ export default {
             characterShortName: opponentChar,
             type: "Whitelist",
           });
-          this.filterGames();
           this.opponentCharacters.find((opp) => opp.shortName === opponentChar).filterType = "Whitelist";
         }
       }
+      this.filterGames();
       this.optionalDataKey++;
     },
     toggleStage: function (stageName) {
@@ -474,7 +476,6 @@ export default {
       this.filter.stages = undefined;
     },
   },
-  computed: {},
 };
 </script>
 

@@ -2,7 +2,7 @@
   <div id="stats-display">
     <div class="top-block">
       <div class="left">
-        <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" :side="'left'" />
+        <PlayerDisplayBlock :playerId="playerId()" :characters="[playerCharacter()]" :side="'left'" v-on:save-stats="saveStats()" />
       </div>
       <div class="middle">
         <StatsMainBlock :stats="processedStats" :currentCharacter="opponentActiveCharacter" :currentStage="activeStage" />
@@ -81,6 +81,7 @@ export default {
       playerJCGrabs: undefined,
       opponentJCGrabs: undefined,
       gameResults: undefined,
+      statsDates: undefined,
     };
   },
   computed: {
@@ -446,6 +447,53 @@ export default {
     initCurrentCharAndStage: function () {
       this.opponentActiveCharacter = Object.keys(this.playerOverall)[0];
       this.activeStage = "allStages";
+    },
+    saveStats: function () {
+      const stats = {
+        playerCharName: this.stats.playerCharName,
+        playerConversions: this.playerConversions,
+        opponentConversions: this.opponentConversions,
+        playerOverall: this.playerOverall,
+        opponentOverall: this.opponentOverall,
+        punishedActionsForPlayer: this.punishedActionsForPlayer,
+        punishedActionsForOpponent: this.punishedActionsForOpponent,
+        lcancelsForPlayer: this.lcancelsForPlayer,
+        lcancelsForOpponent: this.lcancelsForOpponent,
+        ledgeDashesForPlayer: this.ledgeDashesForPlayer,
+        ledgeDashesForOpponent: this.ledgeDashesForOpponent,
+        playerWavedashes: this.playerWavedashes,
+        opponentWavedashes: this.opponentWavedashes,
+        playerJCGrabs: this.playerJCGrabs,
+        opponentJCGrabs: this.opponentJCGrabs,
+        dates: this.statsDates,
+      };
+
+      const data = this.encode(JSON.stringify(stats, null, 4));
+      const blob = new Blob([data], {
+        type: "application/octet-stream",
+      });
+      const url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.setAttribute("href", url);
+      let timeStamp = new Date();
+      timeStamp = timeStamp.toISOString();
+      timeStamp = timeStamp.replace("-", "");
+      timeStamp = timeStamp.replace("-", "");
+      timeStamp = timeStamp.replace(":", "");
+      timeStamp = timeStamp.replace(":", "");
+      timeStamp = timeStamp.replace(".", "");
+      link.setAttribute("download", `stats_${timeStamp.valueOf()}.json`);
+
+      var event = document.createEvent("MouseEvents");
+      event.initMouseEvent("click", true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+      link.dispatchEvent(event);
+    },
+    encode: function (s) {
+      var out = [];
+      for (var i = 0; i < s.length; i++) {
+        out[i] = s.charCodeAt(i);
+      }
+      return new Uint8Array(out);
     },
   },
 };

@@ -140,6 +140,9 @@ export default {
       this.filter = {};
       this.gameFilesForList= [];
       for (let game of this.enrichedGameFiles) {
+        game.filteredOut = false;
+        game.forcedIn = false;
+        game.forcedOut = false;
         this.gameFilesForList.push(game);
       }
     },

@@ -84,6 +84,7 @@ export default {
     },
     writeStatsSend: function () {
       console.log("Clicked on write stats");
+      this.$emit("save-stats", true);
     },
     changeCharacterSend: function () {
       this.$emit("character-change", true);
