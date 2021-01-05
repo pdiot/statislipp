@@ -8,7 +8,7 @@
       <div class="main-panel" v-bind:class="{ 'single-panel': !hasGames }">
         <div class="header-data-line">
           <div class="d40"></div>
-          <h1>Slippi stats calculator V1.0</h1>
+          <h1>Slippi stats calculator V1.1</h1>
           <div class="d20"></div>
           <div class="slippi-link">
             <a v-on:click="openSlippiGG()">
