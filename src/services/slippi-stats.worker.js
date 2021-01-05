@@ -7,19 +7,19 @@ const LEDGEDASHWINDOW = 50;
 
 export async function processStats(data) {
 
-    const slippiId = data.slippiId;
-    const startTime = new Date().getTime();
+  const slippiId = data.slippiId;
+  const startTime = new Date().getTime();
 
-    try {
-      let stats = await processGames(data.games, slippiId);
-      const time = new Date().getTime() - startTime;
-      console.log('Fin du traitement : ', stats);
-      console.log(`Finished processing in ${time}ms`);
-      return stats;
-    } catch (err) {
-      console.log(err);
-    }
-  
+  try {
+    let stats = await processGames(data.games, slippiId);
+    const time = new Date().getTime() - startTime;
+    console.log('Fin du traitement : ', stats);
+    console.log(`Finished processing in ${time}ms`);
+    return stats;
+  } catch (err) {
+    console.log(err);
+  }
+
 }
 
 async function processGames(gamesFromList, slippiId) {
@@ -78,16 +78,39 @@ async function processGames(gamesFromList, slippiId) {
     const stage = getMapName(settings.stageId);
     let playerPort;
     let opponentPort;
-    if (metadata.players[2] ||
-      metadata.players[3] ||
-      (metadata.players[0] && !metadata.players[0].names.code) ||
-      (metadata.players[1] && !metadata.players[1].names.code)) {
+    if (settings.gameMode === 2) {
       // We're in a local game
       for (let pcp of gameBlob.playerCharacterPairs) {
-        if (pcp.isCurrentPlayer) {
-          playerPort = pcp.port;
+        if (pcp.player === slippiId) {
+          switch (pcp.player) {
+            case 'PORT1':
+              playerPort = 0;
+              break;
+            case 'PORT2':
+              playerPort = 1;
+              break;
+            case 'PORT3':
+              playerPort = 2;
+              break;
+            case 'PORT4':
+              playerPort = 3;
+              break;
+          }
         } else {
-          opponentPort = pcp.port;
+          switch (pcp.player) {
+            case 'PORT1':
+              opponentPort = 0;
+              break;
+            case 'PORT2':
+              opponentPort = 1;
+              break;
+            case 'PORT3':
+              opponentPort = 2;
+              break;
+            case 'PORT4':
+              opponentPort = 3;
+              break;
+          }
         }
       }
     } else {
