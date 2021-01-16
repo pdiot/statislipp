@@ -71,7 +71,7 @@ export default {
     },
     getRatio: function(option) {
       if (option && (option.failed + option.successful !== 0)) {
-        return `${+parseFloat((option.failed / (option.failed + option.successful) * 100).toFixed(2))}%`;
+        return `${+parseFloat((option.successful / (option.failed + option.successful) * 100).toFixed(2))}%`;
       }
       return "N/A";
     }
